@@ -32,9 +32,9 @@ class Cliente(Base):
     nomecliente = Column('NOMECLIENTE',String)
     doc = Column('DOC',Integer,primary_key=True) #id do cliente 
     idade = Column('IDADE',Integer)
-    qntd = Column('QTND',Integer) #verifica se o cliente já tem ou n carro alugado / QTND = qtnd de carros alugos
+    qntd = Column('QTND',Integer,default=0) #verifica se o cliente já tem ou n carro alugado / QTND = qtnd de carros alugos
 
-    def __init__(self,nomecliente,doc,qtnd,idade):
+    def __init__(self,nomecliente,doc,idade,qtnd=0):
         self.nomecliente = nomecliente
         self.doc = doc 
         self.idade = idade 
@@ -47,7 +47,6 @@ class Aluguel(Base):
     valor = Column('VALOR',Float,primary_key=True) 
     cliente_id = Column('CLIENTE_ID',Integer,ForeignKey("Clientes.doc")) #chave estrangeira nomeadatabela.nomedacoluna
     carro_id = Column('CARRO_ID',Integer,ForeignKey("Carros.placa"))
-    dias = Column('DIAS',Integer)
 
     def __init__(self,dias,valor,cliente_id,carro_id):
         self.dias = dias
@@ -55,8 +54,8 @@ class Aluguel(Base):
         self.carro_id = carro_id
         self.cliente_id = cliente_id
 
-    cliente = relationship("Cliente") 
-    carro = relationship("Carro")     #tem q pesquisa  oq isso faz
+Cliente.alugueis = relationship("Aluguel", back_populates="cliente")
+Carro.alugueis = relationship("Aluguel", back_populates="carro")
 
 
 def cadastrar_cliente(nomecliente, doc):
@@ -98,7 +97,7 @@ def alugar_carro(cliente_id,carro_id,dias):
             cliente.qntd += 1 #adiciona um carro para o cliente
             session.add(novo_aluguel)
             session.commit()
-            print(f"o carro da placa {carro_id} alugado para o cliente {cliente_id} por {novo_aluguel.dias} dias. Valor total: {novo_aluguel.valor}")
+            print(f"o carro da placa {carro_id} alugado para o cliente {cliente_id} por {dias} dias. Valor total: {novo_aluguel.valor}")
         else:
             print('o carro ja esta alugado')
     else:
@@ -124,35 +123,36 @@ def devolver_carro(cliente_id, carro_id):
 
 def menu():
     while True:
-        print("\nSistema de Locadora de Veículos")
-        print("1. Adicionar Veículo")
-        print("2. Alugar Veículo")
-        print("3. Devolver Veículo")
-        print("4. Adicionar Cliente")
-        print("5. Consultar Dados Gerais")
+        print("\n Sistema de aluguel CARPRO")
+        print("1. Alugar Carro")
+        print("2. Devolver Carro")
+        print("3. Cadastrar Cliente")
+        print("4. Cadastrar Carro")
+        print("5. Consulta Geral")
+        print("6. Sair")
     
         opcao = input("Escolha uma opção: ")
 
         if opcao == "1":
+            cliente_id = int(input('ID do Cliente: '))
+            carro_id = int(input('Placa do Carro: '))
+            dias = int(input('Dias: '))
+            alugar_carro(cliente_id, carro_id, dias)
+        elif opcao == "2":
+            cliente_id = int(input('ID do Cliente: '))
+            carro_id = int(input('Placa do Carro: '))
+            devolver_carro(cliente_id, carro_id)
+        elif opcao == "3":
+            nomecliente = input('Nome do Cliente: ')
+            doc = int(input('Documento: '))
+            idade = int(input('Idade: '))
+            cadastrar_cliente(nomecliente, doc)
+        elif opcao == "4":
             placa = int(input('Placa: '))
             nome = input('Nome: ')
             disponibilidade = input('Disponibilidade (True/False): ') == 'True'
             marca = input('Marca: ')
             cadastrar_carro(placa, nome, marca, disponibilidade)
-        elif opcao == "2":
-            cliente_id = int(input('ID do Cliente: '))
-            carro_id = int(input('Placa do Carro: '))
-            dias = int(input('Dias: '))
-            alugar_carro(cliente_id, carro_id, dias)
-        elif opcao == "3":
-            cliente_id = int(input('ID do Cliente: '))
-            carro_id = int(input('Placa do Carro: '))
-            devolver_carro(cliente_id, carro_id)
-        elif opcao == "4":
-            nomecliente = input('Nome do Cliente: ')
-            doc = int(input('Documento: '))
-            idade = int(input('Idade: '))
-            cadastrar_cliente(nomecliente, doc, idade)
         elif opcao == "5":
             dados = consulta_geral()
             print("Clientes:", dados["clientes"])
@@ -162,3 +162,6 @@ def menu():
             break
         else:
             print("Opção inválida, tente novamente.")
+
+
+menu()
